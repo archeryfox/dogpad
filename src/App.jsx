@@ -4,9 +4,9 @@ import CategoryList from "./components/CategoryList.jsx";
 import SubscriptionList from "./components/SubscriptionList.jsx";
 import TransactionList from "./components/TransactionList.jsx";
 import UserList from "./components/UserList.jsx";
-import "./index.css"
 import RoleList from "./components/RoleList.jsx";
 import VenueList from "./components/VenueList.jsx";
+import "./index.css"
 
 
 
@@ -22,7 +22,13 @@ const [data, setData] = useState(0);
 
     return (
         <div className="p-[50px]">
+            <EventList/>
+            <VenueList/>
+            <CategoryList/>
             <UserList/>
+            <RoleList/>
+            <SubscriptionList/>
+            <TransactionList/>
         </div>
     );
 };
