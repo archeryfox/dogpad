@@ -12,7 +12,8 @@ const VenueList = () => {
     const handleAddVenue = () => {
         const name = prompt('Enter venue name');
         const address = prompt('Enter venue address');
-        const capacity = prompt('Enter venue capacity');
+        const capacity = parseInt(prompt('Enter venue capacity'));
+
         addVenue(name, address, capacity);
         fetchVenues()
     };
