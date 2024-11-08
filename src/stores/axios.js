@@ -5,7 +5,10 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 // Create an instance of axios with the base URL of the API
 export const api = axios.create({
-    baseURL: API_URL
+    baseURL: API_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
 });
 
 export const routes = {
@@ -19,4 +22,6 @@ export const routes = {
     subscriptions: "/subscriptions",
     transactions: "/transactions",
     venues: "/venues",
+    login: "/auth/login",
+    register: "/auth/register"
 }
