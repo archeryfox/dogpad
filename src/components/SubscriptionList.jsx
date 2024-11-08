@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import useSubscriptionsStore from '../stores/SubscriptionStore';
+import { format } from 'date-fns';
 
 const SubscriptionList = () => {
     const { subscriptions, fetchSubscriptions } = useSubscriptionsStore();
@@ -14,8 +15,8 @@ const SubscriptionList = () => {
             <ul className="space-y-6">
                 {subscriptions.map(subscription => (
                     <li key={subscription.id} className="bg-white shadow-md rounded-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow">
-                        <p className="text-lg font-semibold text-blue-600 mb-2">Мероприятие: {subscription.eventTitle}</p>
-                        <p className="text-gray-600">Дата: {new Date(subscription.date).toLocaleDateString()}</p>
+                        <p className="text-lg font-semibold text-blue-600 mb-2">Мероприятие: {subscription.event.name}</p>
+                        <p className="text-gray-600">Дата: {format(new Date(subscription.event.date), 'dd.MM.yyyy HH:mm')}</p>
                     </li>
                 ))}
             </ul>

@@ -6,23 +6,15 @@ import TransactionList from "./components/TransactionList.jsx";
 import UserList from "./components/UserList.jsx";
 import RoleList from "./components/RoleList.jsx";
 import VenueList from "./components/VenueList.jsx";
-import "./index.css"
-
-
+import VenueEventChart from "./components/VenueEventChart.jsx";
+import EventChart from "./components/EventChart.jsx";
 
 const App = () => {
-const [data, setData] = useState(0);
-    useEffect(() => {
-        console.log(data)
-    }, [data]);
-
-    function changeNumber(){
-        setData(2)
-    }
-
     return (
         <div className="p-[50px]">
             <EventList/>
+            <EventChart/>
+            <VenueEventChart/>
             <VenueList/>
             <CategoryList/>
             <UserList/>

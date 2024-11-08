@@ -7,7 +7,7 @@ const VenueList = () => {
 
     useEffect(() => {
         fetchVenues();
-    }, [venues]);
+    }, []);
 
     const handleAddVenue = () => {
         const name = prompt('Enter venue name');
