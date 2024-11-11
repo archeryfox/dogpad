@@ -5,14 +5,15 @@ const useSubscriptionStore = create((set) => ({
     subscriptions: [],
 
     // Добавление подписки
-    addSubscription: async (userId, eventId) => {
+    addSubscription: async (event) => {
         try {
-            const response = await api.post(routes.subscriptions, { userId, eventId });
+            const response = await api.post(routes.subscriptions, event);
             set((state) => ({
                 subscriptions: [...state.subscriptions, response.data]
             }));
+            alert("Вы успешно подписались на мероприятие!");
         } catch (error) {
-            console.error("Error adding subscription:", error);
+            console.error("Ошибка при подписке:", error);
         }
     },
 

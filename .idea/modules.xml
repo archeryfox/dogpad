@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/kursossich.iml" filepath="$PROJECT_DIR$/.idea/kursossich.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/dogpad.ui.iml" filepath="$PROJECT_DIR$/.idea/dogpad.ui.iml" />
     </modules>
   </component>
 </project>

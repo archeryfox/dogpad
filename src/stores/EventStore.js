@@ -16,6 +16,15 @@ const useEventStore = create((set) => ({
         }
     },
 
+    fetchEventsByCategory: async (categoryId) => {
+        try {
+            const response = await api.get(`${routes.events}?categoryId=${categoryId}`);
+            set({ events: response.data });
+        } catch (error) {
+            console.error("Error fetching events by category:", error);
+        }
+    },
+
     // Получение всех событий
     fetchEvents: async () => {
         try {
