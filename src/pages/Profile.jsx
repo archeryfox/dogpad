@@ -5,17 +5,10 @@ import useSubscriptionStore from "../stores/SubscriptionStore.js";
 import {format} from "date-fns";
 import SubscriptionFeed from "./SubscriptionFeed.jsx";
 
-import {YMap, YMapDefaultSchemeLayer, YMapDefaultFeaturesLayer, YMapMarker, reactify} from '../../lib/ymaps.js'
 
 
 
-const map = new YMap(document.getElementById('root'), {
-    location: {
-        zoom: 10,
-        center: [25.229762, 55.289311]
-    },
-    behaviors: ['drag', 'scrollZoom', 'pinchZoom', 'dblClick']
-});
+
 
 const Profile = ({picSize = 14}) => {
     const {user, logout} = useAuthStore(); // Получаем данные пользователя из хранилища
@@ -49,16 +42,7 @@ const Profile = ({picSize = 14}) => {
 
     return (
         <div className="p-10 items-center">
-            <YMap location={{center: [25.229762, 55.289311], zoom: 9}} mode="vector">
-                <YMapDefaultSchemeLayer />
-                <YMapDefaultFeaturesLayer />
 
-                <YMapMarker coordinates={[25.229762, 55.289311]} draggable={true}>
-                    <section>
-                        <h1>You can drag this header</h1>
-                    </section>
-                </YMapMarker>
-            </YMap>
             <div className="profile-container h-full items-center">
                 <h1 className="text-3xl font-bold text-center mb-6">Профиль пользователя</h1>
                 <div className="profile-info bg-white  rounded-lg p-6 mb-6">

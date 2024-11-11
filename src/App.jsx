@@ -1,48 +1,29 @@
-// src/App.jsx
-import './index.css';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import LoginForm from './components/forms/LoginForm.jsx';
-import RegisterForm from './components/forms/RegisterForm';
-import Profile from './pages/Profile.jsx';
-import useAuthStore from "./stores/AuthStore.js";
-import Header from './components/Header.jsx';  // Импортируем Header
-import EventFeed from "./pages/EventFeed.jsx";
-import EventCard from "./components/cards/EventCard.jsx";
-import EventDetail from "./pages/EventDetail.jsx";
+import React, {useState} from "react";
+import {Map, Placemark, YMaps} from "@pbe/react-yandex-maps";
+import {AddressSuggest} from "./AddressSuggest.jsx";
 
 const App = () => {
-    const { user } = useAuthStore(); // Получаем пользователя из хранилища
+    const [coordinates, setCoordinates] = useState([55.751574, 37.573856]);
 
     return (
-        <Router>
-            <div className="app-container">
-                {/* Отображаем Header на всех страницах */}
-                {(window.location.pathname !== '/register') && <Header />}
-
-                <div className="content-container p-6">
-                    <Routes>
-                        {/* Страница для логина и регистрации */}
-                        <Route path="/" element={!user ?
-                            <div className={`h-[30vh] items-center`}>
-                                <LoginForm />
-                            </div>
-                            :
-                            <div className={`h-[30vh] items-center`}>
-                                <EventFeed />
-                            </div>
-                        } />
-                        <Route path="/register" element={
-                            <div className={`h-[30vh] items-center`}>
-                                <RegisterForm />
-                            </div>
-                        } />
-                        {/* Страница профиля */}
-                        <Route path="/profile" element={user ? <Profile /> : <LoginForm />} />
-                        <Route path="/event/:id" element={<EventDetail />} />
-                    </Routes>
-                </div>
+        <YMaps query={{ apikey: '8aa9a32f-7735-426f-b2ea-01bc84647e4a', lang: 'ru_RU' }}>
+            <div className="flex flex-col items-center p-4 bg-gray-100 min-h-screen">
+                <AddressSuggest onAddressSelect={setCoordinates} />
+                <Map
+                    defaultState={{
+                        center: [55.751574, 37.573856],
+                        zoom: 9,
+                        controls: ["zoomControl", "fullscreenControl"],
+                    }}
+                    width="100%"
+                    height="500px"
+                    modules={["control.ZoomControl", "control.FullscreenControl", "control.SearchControl"]}
+                    state={{ center: coordinates, zoom: 10 }}
+                >
+                    <Placemark geometry={coordinates} />
+                </Map>
             </div>
-        </Router>
+        </YMaps>
     );
 };
 

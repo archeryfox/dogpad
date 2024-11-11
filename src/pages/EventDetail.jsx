@@ -8,9 +8,10 @@ import rehypeRaw from "rehype-raw";
 import {format} from 'date-fns';
 import useAuthStore from "../stores/AuthStore.js";
 import useSubscriptionStore from "../stores/SubscriptionStore.js";
-import YandexMap from "../components/YandexMap.jsx";
-import { YMaps, Map, Polygon, SearchControl } from 'react-yandex-maps';
-import { Box } from "@mui/material";
+import YandexMap from "../components/YandexMap.jsx"
+import {YMaps} from "react-yandex-maps";
+import {Box} from "@mui/material";
+
 
 const EventDetail = ({onSubscribe, onUnsubscribe}) => {
     const {id} = useParams();  // Получаем ID события из параметров маршрута
@@ -135,14 +136,8 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
                     </ul>
                 </div>
             )}
-            <YMaps>
-                <div style={{width: '100%', position: 'relative', margin: '100px 0 0 0' }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'center', margin: '0 0 300px 0', height: { xs:500, md: 700 }}}>
-                        <Map width='90%' defaultState={{ center: [55.758493, 37.839271], zoom: 9, controls: [] }}>
-                        </Map>
-                    </Box>
-                </div>
-            </YMaps>
+
+            <YandexMap />
             {/* Кнопка подписки/отписки */}
             <div className="text-center">
                 {}
