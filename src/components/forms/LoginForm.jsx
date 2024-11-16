@@ -1,5 +1,5 @@
 import React, {useState} from 'react';
-import useAuthStore from '../../stores/AuthStore';
+import useAuthStore from '../../stores/AuthStore.js';
 import {Link} from "react-router-dom";
 
 const LoginForm = () => {

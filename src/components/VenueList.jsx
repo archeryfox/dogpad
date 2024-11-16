@@ -1,6 +1,6 @@
 // components/VenueList.js
 import React, { useEffect } from 'react';
-import useVenueStore from '../stores/Venue';
+import useVenueStore from '../stores/VenueStore.js';
 
 const VenueList = () => {
     const { venues, fetchVenues, addVenue, deleteVenue } = useVenueStore()

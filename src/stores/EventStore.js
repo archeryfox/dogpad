@@ -11,6 +11,7 @@ const useEventStore = create((set) => ({
             set((state) => ({
                 events: [...state.events, response.data],
             }));
+            return response.data
         } catch (error) {
             console.error("Error adding event:", error);
         }
@@ -38,6 +39,7 @@ const useEventStore = create((set) => ({
     // Обновление события по ID
     updateEvent: async (id, updatedData) => {
         try {
+            console.log(updatedData);
             const response = await api.put(`${routes.events}/${id}`, updatedData);
             set((state) => ({
                 events: state.events.map((event) =>

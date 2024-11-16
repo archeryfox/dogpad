@@ -1,6 +1,6 @@
 // components/SpeakerList.js
 import React, { useEffect } from 'react';
-import useSpeakerStore from '../stores/Speaker.js';
+import useSpeakerStore from '../stores/SpeakerStore.js';
 
 const SpeakerList = () => {
     const { speakers, fetchSpeakers, addSpeaker, deleteSpeaker } = useSpeakerStore((state) => ({

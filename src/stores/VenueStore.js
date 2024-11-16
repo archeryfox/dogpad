@@ -4,7 +4,7 @@ import { api, routes } from "./axios.js";
 
 const useVenueStore = create((set) => ({
     venues: [],
-    addVenue: async (name, address, capacity) => {
+    addVenue: async ({name, address, capacity}) => {
         try {
             const response = await api.post(routes.venues, { name, address, capacity });
             set((state) => ({

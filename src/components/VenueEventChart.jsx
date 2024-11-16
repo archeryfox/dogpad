@@ -1,7 +1,7 @@
 import React, {useEffect, useState, useMemo} from 'react';
 import {Bar} from 'react-chartjs-2';
 import {Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend} from 'chart.js';
-import useVenueStore from '../stores/Venue.js';
+import useVenueStore from '../stores/VenueStore.js';
 
 // Регистрация компонентов для Chart.js
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);

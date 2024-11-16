@@ -4,7 +4,7 @@ import useEventStore from "../stores/EventStore.js";
 import { useEffect } from "react";
 import EventCard from "../components/cards/EventCard.jsx";
 // SubscriptionFeed.jsx
-export const SubscriptionFeed = () => {
+export const SubscriptionFeed = ({inProfile}) => {
     const { user } = useAuthStore();
     const { subscriptions, fetchSubscriptions, deleteSubscription } = useSubscriptionStore();
     const { events, fetchEvents } = useEventStore();
@@ -33,6 +33,7 @@ export const SubscriptionFeed = () => {
                     return (
                         isSubscribed(event.id) && (
                             <EventCard
+                                inProfileFeed={true}
                                 key={event.id}
                                 event={event}
                                 user={user}

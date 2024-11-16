@@ -19,10 +19,10 @@ const CategoryList = ({ onCategoryChange }) => {
     }, []);
 
     return (
-        <div className="category-filter mb-4">
+        <div className="category-filter">
             <label className="text-lg font-semibold">Фильтр по категории:</label>
             <select
-                onChange={(e) => onCategoryChange(e.target.value || null)}
+                onChange={(e) => onCategoryChange(e.target.value-0 || null)}
                 className="ml-2 p-2 border rounded-md"
             >
                 <option value="">Все категории</option>

@@ -16,6 +16,7 @@
     "@mui/icons-material": "^6.1.6",
     "@mui/material": "^6.1.6",
     "@mui/styled-engine": "^6.1.6",
+    "@mui/x-date-pickers": "^7.22.2",
     "@pbe/react-yandex-maps": "^1.2.5",
     "@yandex/ymaps3-hint": "^0.0.9",
     "chart.js": "^4.4.6",

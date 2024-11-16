@@ -17,7 +17,6 @@ const EventList = () => {
                     <li key={event.id}
                         className="bg-white shadow-md rounded-lg p-6 border border-gray-200 hover:shadow-xl transition-shadow">
                         <h4 className="text-2xl font-semibold text-blue-600 mb-2">{event.name}</h4>
-                        <p className="text-gray-600 mb-4">{event.description}</p>
                         <p className="text-gray-500 font-medium">Дата: {new Date(event.date).toLocaleDateString()}</p>
 
                         {/* Категории как цветные квадратики */}
