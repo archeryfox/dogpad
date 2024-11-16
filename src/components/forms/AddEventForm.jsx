@@ -203,7 +203,7 @@ const AddEventForm = () => {
             >
                 <option value="">Выберите организатора</option>
                 {users
-                    .filter(user => user.role.name === 'organizer')
+                    .filter(user => user?.role?.name === 'organizer')
                     .map(user => (
                         <option key={user.id} value={user.id}>
                             {user.name}
