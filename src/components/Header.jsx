@@ -1,9 +1,9 @@
 // src/components/Header.jsx
-import { Link, useNavigate } from 'react-router-dom';
+import {Link, useNavigate} from 'react-router-dom';
 import useAuthStore from "../stores/AuthStore.js";  // Доступ к текущему пользователю
 
 const Header = () => {
-    const { user, logout } = useAuthStore();  // Доступ к текущему пользователю и функции выхода
+    const {user, logout} = useAuthStore();  // Доступ к текущему пользователю и функции выхода
     const navigate = useNavigate();  // Хук для навигации
 
     return (
@@ -26,9 +26,6 @@ const Header = () => {
                             {user.role === 'user' && (
                                 <>
                                     <li>
-                                        <Link to="/events" className="hover:text-gray-300">Мои события</Link>
-                                    </li>
-                                    <li>
                                         <Link to="/subscriptions" className="hover:text-gray-300">Подписки</Link>
                                     </li>
                                 </>
@@ -36,36 +33,10 @@ const Header = () => {
                             {user.role === 'admin' && (
                                 <>
                                     <li>
-                                        <Link to="/user-management" className="hover:text-gray-300">Управление пользователями</Link>
-                                    </li>
-                                    <li>
-                                        <Link to="/charts" className="hover:text-gray-300">Диаграммы</Link>
-                                    </li>
-                                    <li>
                                         <Link to="/role-change-requests" className="hover:text-gray-300">Запросы на смену роли</Link>
                                     </li>
-                                </>
-                            )}
-                            {user.role === 'organizer' && (
-                                <>
                                     <li>
                                         <Link to="/charts" className="hover:text-gray-300">Диаграммы</Link>
-                                    </li>
-                                    <li>
-                                        <Link to="/my-events" className="hover:text-gray-300">Мои мероприятия</Link>
-                                    </li>
-                                    <li>
-                                        <Link to="/event/add" className="hover:text-gray-300">Создать мероприятие</Link>
-                                    </li>
-                                </>
-                            )}
-                            {user.role === 'speaker' && (
-                                <>
-                                <li>
-                                        <Link to="/my-sessions" className="hover:text-gray-300">Мои сессии</Link>
-                                    </li>
-                                    <li>
-                                        <Link to="/speaking-opportunities" className="hover:text-gray-300">Возможности</Link>
                                     </li>
                                 </>
                             )}
@@ -75,13 +46,33 @@ const Header = () => {
                                         <Link to="/db-management" className="hover:text-gray-300">Управление БД</Link>
                                     </li>
                                     <li>
-                                        <Link to="/role-change-requests" className="hover:text-gray-300">Управление запросами на роли</Link>
-                                    </li>
-                                    <li>
                                         <Link to="/logs" className="hover:text-gray-300">Логи</Link>
                                     </li>
                                     <li>
+                                        <Link to="/role-change-requests" className="hover:text-gray-300">Управление запросами на роли</Link>
+                                    </li>
+                                    <li>
                                         <Link to="/charts" className="hover:text-gray-300">Диаграммы</Link>
+                                    </li>
+                                </>
+                            )}
+                            {user.role === 'organizer' && (
+                                <>
+                                    <li>
+                                        <Link to="/my-events" className="hover:text-gray-300">Мои мероприятия</Link>
+                                    </li>
+                                    <li>
+                                        <Link to="/event/add" className="hover:text-gray-300">Создать мероприятие</Link>
+                                    </li>
+                                    <li>
+                                        <Link to="/charts" className="hover:text-gray-300">Диаграммы</Link>
+                                    </li>
+                                </>
+                            )}
+                            {user.role === 'speaker' && (
+                                <>
+                                    <li>
+                                        <Link to="/my-sessions" className="hover:text-gray-300">Мои сессии</Link>
                                     </li>
                                 </>
                             )}

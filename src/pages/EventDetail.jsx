@@ -199,7 +199,7 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
                     <h3 className="text-2xl font-semibold">Спикеры</h3>
                     <ul className="list-disc pl-5 mt-2">
                         {event.speakers.map((speaker, index) => (
-                            <li key={index} className="text-gray-700">{speaker.name}</li>
+                            <li key={index} className="text-gray-700">{speaker.speaker.name}</li>
                         ))}
                     </ul>
                 </div>

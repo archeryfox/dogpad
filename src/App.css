@@ -8,6 +8,29 @@
   padding: 2rem;
   text-align: center;
 }
+/* Добавь в глобальные стили или компонент */
+.speaker-profile {
+  text-align: center;
+  max-width: 600px;
+  margin: auto;
+}
+
+.avatar-img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 20px;
+}
+
+ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+ul li {
+  margin-bottom: 10px;
+}
 
 .logo {
   height: 6em;

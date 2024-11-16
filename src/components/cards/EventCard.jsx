@@ -1,9 +1,9 @@
-import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
+import {format} from 'date-fns';
+import {Link} from 'react-router-dom';
 import rehypeRaw from "rehype-raw";
-import { useState } from 'react'; // Для работы с состоянием
+import {useState} from 'react';
 
-const EventCard = ({ event, user, isSubscribed, onSubscribe, onUnsubscribe, inProfileFeed }) => {
+const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inProfileFeed, inSession}) => {
     // Состояние для модального окна согласия
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isConfirmed, setIsConfirmed] = useState(false); // Состояние для подтверждения
@@ -24,13 +24,16 @@ const EventCard = ({ event, user, isSubscribed, onSubscribe, onUnsubscribe, inPr
         closeModal(); // Закрыть модальное окно
     };
 
+    // Проверка, является ли текущий пользователь спикером этого мероприятия
+    const isSpeaker = event.speakers?.some(speaker => speaker.speaker.user.id === user.id) || inSession;
+
     return (
         <div className="event-card items-center bg-white shadow-md rounded-lg p-4 border border-gray-200">
             {/* Баннер с изображением мероприятия */}
             {event.image && (
                 <div className="event-banner mb-4 w-[20em] relative rounded-lg overflow-hidden">
                     {!inProfileFeed &&
-                        <div className="relative" style={{ paddingTop: '75%' }}>
+                        <div className="relative" style={{paddingTop: '75%'}}>
                             <img
                                 src={event?.image}
                                 alt={event?.name}
@@ -93,7 +96,7 @@ const EventCard = ({ event, user, isSubscribed, onSubscribe, onUnsubscribe, inPr
                             <h4 className="font-semibold text-gray-700">Спикеры:</h4>
                             <ul className="list-disc pl-5 text-gray-600">
                                 {event.speakers.map((speaker, index) => (
-                                    <li key={index}>{speaker.name}</li>
+                                    <li key={index}>{speaker.speaker.name}</li>
                                 ))}
                             </ul>
                         </div>
@@ -101,42 +104,50 @@ const EventCard = ({ event, user, isSubscribed, onSubscribe, onUnsubscribe, inPr
                 </div>
 
                 {/* Кнопка подписки или отписки */}
-                <div className="mt-4">
-                    {!isSubscribed ? (
-                        <button
-                            className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                            onClick={event.isPaid ? openModal : () => onSubscribe(event.id)}>
-                            Подписаться
-                        </button>
-                    ) : (
-                        <button
-                            onClick={() => onUnsubscribe(event.id)}
-                            className="py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600">
-                            Отписаться
-                        </button>
-                    )}
-                </div>
-
-                {/* Модальное окно согласия */}
-                {isModalOpen && (
-                    <div className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-                        <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
-                            <h3 className="text-xl font-semibold mb-4">Подтвердите оплату</h3>
-                            <p className="text-gray-600">Это платное мероприятие. Вы подтверждаете, что хотите подписаться и оплатить участие?</p>
-                            <div className="mt-4 flex justify-between">
-                                <button
-                                    className="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                    onClick={closeModal}>
-                                    Отменить
-                                </button>
+                {isSpeaker ? (
+                    <p className="p-2 text-xl text-center">Вы спикер данного события 🧐</p>
+                ) : (
+                    <>
+                        <div className="mt-4">
+                            {!isSubscribed ? (
                                 <button
                                     className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                    onClick={handleSubscribe}>
-                                    Подтвердить
+                                    onClick={event.isPaid ? openModal : () => onSubscribe(event.id)}>
+                                    Подписаться
                                 </button>
-                            </div>
+                            ) : (
+                                <button
+                                    onClick={() => onUnsubscribe(event.id)}
+                                    className="py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600">
+                                    Отписаться
+                                </button>
+                            )}
                         </div>
-                    </div>
+
+                        {/* Модальное окно согласия */}
+                        {isModalOpen && (
+                            <div
+                                className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
+                                <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
+                                    <h3 className="text-xl font-semibold mb-4">Подтвердите оплату</h3>
+                                    <p className="text-gray-600">Это платное мероприятие. Вы подтверждаете, что хотите
+                                        подписаться и оплатить участие?</p>
+                                    <div className="mt-4 flex justify-between">
+                                        <button
+                                            className="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600"
+                                            onClick={closeModal}>
+                                            Отменить
+                                        </button>
+                                        <button
+                                            className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                                            onClick={handleSubscribe}>
+                                            Подтвердить
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>

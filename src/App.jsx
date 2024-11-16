@@ -1,4 +1,3 @@
-// App.js
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import LoginForm from './components/forms/LoginForm.jsx';
 import RegisterForm from './components/forms/RegisterForm.jsx';
@@ -19,11 +18,18 @@ import UpdateEvent from './components/forms/UpdateEvent.jsx';
 import { useEffect } from "react";
 import VenueEventChart from "./components/VenueEventChart.jsx";
 import FileExportImport from "./pages/FileExportImport.jsx";
-import {Charts} from "./pages/Charts.jsx";  // Новый компонент
+import {Charts} from "./pages/Charts.jsx";
+import MySessions from "./pages/MySessions.jsx";  // Новый компонент
 
 const App = () => {
     const { user } = useAuthStore(); // Получаем пользователя из хранилища
     useEffect(() => {}, []);
+
+    // Проверка ролей пользователя
+    const isAdmin = user?.role === 'admin';
+    const isDbAdmin = user?.role === 'db_admin'; // Добавляем проверку для db_admin
+    const isOrganizer = user?.role === 'organizer';
+    const isSpeaker = user?.role === 'speaker';
 
     return (
         <Router>
@@ -50,10 +56,10 @@ const App = () => {
                             </div>
                         } />
 
-                        {/* Страница добавления нового события */}
-                        <Route path="/event/add" element={<AddEventForm />} />
+                        {/* Страница добавления нового события доступна только организаторам */}
+                        <Route path="/event/add" element={isOrganizer ? <AddEventForm /> : <NotFoundPage />} />
 
-                        {/* Страница профиля, если пользователь авторизован */}
+                        {/* Страница профиля доступна для всех авторизованных пользователей */}
                         <Route path="/profile" element={user ? <Profile /> : <LoginForm />} />
 
                         {/* Детали события */}
@@ -61,14 +67,32 @@ const App = () => {
                         <Route path="/events/:id" element={<EventDetail />} />
 
                         {/* Страницы для ролей */}
-                        <Route path="/role-change-requests" element={<RoleChangeRequests />} />
-                        <Route path="/db-management" element={<FileExportImport />} />
-                        <Route path="/my-events" element={<MyEvents />} />
+                        {/* Доступ к запросам на смену роли только для администраторов */}
+                        <Route path="/role-change-requests" element={isAdmin || isDbAdmin ? <RoleChangeRequests /> : <NotFoundPage />} />
+
+                        {/* Страница управления базой данных только для администраторов базы данных */}
+                        <Route path="/db-management" element={isDbAdmin  ? <FileExportImport /> : <NotFoundPage />} />
+
+                        {/* Мои события доступны организаторам */}
+                        <Route path="/my-events" element={isOrganizer ? <MyEvents /> : <NotFoundPage />} />
+
+                        {/* Мои сессии доступны только спикерам */}
+                        <Route path="/my-sessions" element={isSpeaker ? <MySessions /> : <NotFoundPage />} />
+
+                        {/* Страница подписок доступна всем пользователям */}
                         <Route path="/subscriptions" element={<SubscriptionFeed />} />
+
+                        {/* Страница списка событий доступна всем */}
                         <Route path="/events" element={<EventList />} />
-                        <Route path="/update-event/:eventId" element={<UpdateEvent />} />
+
+                        {/* Страница обновления события доступна только организатору */}
+                        <Route path="/update-event/:eventId" element={isOrganizer ? <UpdateEvent /> : <NotFoundPage />} />
+
+                        {/* Страница с графиками доступна всем */}
                         <Route path="/charts" element={<Charts />} />
-                        <Route path="/logs" element={<BackupsAndLogs />} />
+
+                        {/* Страница резервного копирования и логов доступна только администратору или администратору базы данных */}
+                        <Route path="/logs" element={isAdmin || isDbAdmin ? <BackupsAndLogs /> : <NotFoundPage />} />
 
                         {/* Страница 404 - для всех остальных маршрутов */}
                         <Route path="*" element={<NotFoundPage />} />

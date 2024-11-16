@@ -38,7 +38,7 @@ const useAuthStore = create((set) => ({
 
     // Метод для получения одобренной роли
     getApprovedRole: async (user) => {
-        console.log(user)
+        // console.log(user)
         const approvedRequest = user.RoleChangeRequest
             .filter(request => request.status === 'approved')
             .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]; // Последний одобренный запрос
@@ -61,7 +61,21 @@ const useAuthStore = create((set) => ({
             set({ error: 'Ошибка при обновлении профиля', loading: false });
         }
     },
-
+// Новый метод для получения обновленного пользователя с сервера
+    fetchUpdatedUser: async () => {
+        set({ loading: true, error: null });
+        try {
+            const response = await api.get(routes.check, {
+                headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+            });
+            const updatedUser = response.data;
+            const role = await useAuthStore.getState().getApprovedRole(updatedUser);
+            set({ user: { ...updatedUser, role }, error: null, loading: false });
+            localStorage.setItem('user', JSON.stringify({ ...updatedUser, role }));
+        } catch (error) {
+            set({ error: 'Ошибка при получении обновленных данных пользователя', loading: false });
+        }
+    },
     // Метод для запроса смены роли
     requestRoleChange: async (userId, requestedRoleId) => {
         set({ loading: true, error: null });
@@ -83,7 +97,7 @@ const useAuthStore = create((set) => ({
                 const updatedUser = { ...state.user, balance: newBalance-0 };
                 return { user: updatedUser };
             });
-            console
+
             // Отправляем запрос на сервер для обновления данных о балансе
             await api.put(`${routes.users}/${id}`, { balance: newBalance-0 });
         } catch (error) {

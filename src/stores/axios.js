@@ -25,6 +25,7 @@ export const routes = {
     venues: "/venues",
     login: "/auth/login",
     register: "/auth/register",
+    check: "/profile",
     requestRoleChange: "/role-change-requests",
     backups: `${VITE_BACKUP_SERVER_URL}/backups`,
     logs: `${VITE_BACKUP_SERVER_URL}/logs`,
