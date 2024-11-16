@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+import {api} from "../stores/axios.js";
 
 const FileExportImport = () => {
     const [csvFile, setCsvFile] = useState(null);
@@ -16,7 +17,7 @@ const FileExportImport = () => {
 
     const handleExport = async (entity, type) => {
         try {
-            const response = await axios.get(`http://localhost:8081/${entity}/export-${type}`, { responseType: 'blob' });
+            const response = await api.get(`/${entity}/export-${type}`, { responseType: 'blob' });
             const file = new Blob([response.data], { type: 'application/octet-stream' });
             const fileURL = URL.createObjectURL(file);
             const a = document.createElement('a');
@@ -48,8 +49,7 @@ const FileExportImport = () => {
         }
 
         try {
-            const response = await axios.post(
-                `http://localhost:8081/${entity}/import-${type}`,
+            const response = await axios.post(`/${entity}/import-${type}`,
                 formData,
                 { headers: { 'Content-Type': 'multipart/form-data' } }
             );
