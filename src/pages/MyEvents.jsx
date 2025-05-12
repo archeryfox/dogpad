@@ -2,13 +2,15 @@ import React, {useEffect, useState} from 'react';
 import useEventStore from '../stores/EventStore.js';
 import useAuthStore from '../stores/AuthStore.js';
 import {Link} from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const MyEvents = () => {
-    const {events, fetchEvents, deleteEvent} = useEventStore();
+    const {events, fetchEvents, deleteEvent, loading, error} = useEventStore();
     const {user} = useAuthStore();
     const [myEvents, setMyEvents] = useState([]);
     const [isModalOpen, setIsModalOpen] = useState(false); // Состояние для модального окна
     const [eventToDelete, setEventToDelete] = useState(null); // Событие, которое нужно удалить
+    const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -24,6 +26,13 @@ const MyEvents = () => {
         }
     }, [events, user]);
 
+    // Показываем уведомление при ошибке
+    useEffect(() => {
+        if (error) {
+            toast.error(error);
+        }
+    }, [error]);
+
     const openModal = (eventId) => {
         setEventToDelete(eventId); // Устанавливаем id мероприятия для удаления
         setIsModalOpen(true); // Открываем модальное окно
@@ -36,8 +45,16 @@ const MyEvents = () => {
 
     const handleDelete = async () => {
         if (eventToDelete) {
-            await deleteEvent(eventToDelete); // Удаляем выбранное мероприятие
-            closeModal(); // Закрываем модальное окно
+            setIsDeleting(true);
+            try {
+                await deleteEvent(eventToDelete); // Удаляем выбранное мероприятие
+                toast.success('Мероприятие успешно удалено');
+                closeModal(); // Закрываем модальное окно
+            } catch (error) {
+                // Обработка ошибок уже реализована в EventStore
+            } finally {
+                setIsDeleting(false);
+            }
         }
     };
 
@@ -54,7 +71,14 @@ const MyEvents = () => {
         <div className="my-events-container max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg space-y-4">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">Мои мероприятия</h2>
 
-            {myEvents.length === 0 ? (
+            {loading && (
+                <div className="text-center py-4">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+                    <p className="mt-2 text-gray-600">Загрузка мероприятий...</p>
+                </div>
+            )}
+
+            {!loading && myEvents.length === 0 ? (
                 <p className="text-center text-gray-500">У вас пока нет мероприятий.</p>
             ) : (
                 <div className="space-y-4">
@@ -96,15 +120,17 @@ const MyEvents = () => {
                         <div className="mt-4 flex justify-end space-x-4">
                             <button
                                 onClick={closeModal}
+                                disabled={isDeleting}
                                 className="px-4 py-2 text-gray-600 bg-gray-200 rounded-lg hover:bg-gray-300"
                             >
                                 Отмена
                             </button>
                             <button
                                 onClick={handleDelete}
-                                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700"
+                                disabled={isDeleting}
+                                className={`px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 ${isDeleting ? 'opacity-70 cursor-not-allowed' : ''}`}
                             >
-                                Удалить
+                                {isDeleting ? 'Удаление...' : 'Удалить'}
                             </button>
                         </div>
                     </div>

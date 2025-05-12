@@ -8,6 +8,8 @@ import useEventCategoryStore from "../../stores/EventCategory.js";
 import { AddressSuggest } from "../AddressSuggest.jsx";
 import YandexMap from "../YandexMap.jsx";
 import useAuthStore from "../../stores/AuthStore.js";
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
 
 const AddEventForm = () => {
     const { addEvent } = useEventStore();
@@ -19,6 +21,10 @@ const AddEventForm = () => {
     const { eventCategories, addEventCategory} = useEventCategoryStore();
     const [isOnline, setIsOnline] = useState(false);
     const [YMapAddres, setYMapAddres] = useState("");
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const navigate = useNavigate();
+
     const [eventData, setEventData] = useState({
         name: '',
         description: '',
@@ -26,7 +32,7 @@ const AddEventForm = () => {
         isPaid: false,
         price: 0,
         image: '',
-        organizerId: null,
+        organizerId: user?.id ?? null,
         venueId: null,
         categories: [],
         speakers: [],
@@ -46,27 +52,72 @@ const AddEventForm = () => {
     }, []);
 
     const handleAddVenue = async () => {
-        if (!eventData.isOnline && !eventData.venueId) {  // Если место не выбрано и не онлайн
-            setVenueData({ ...venueData, address: YMapAddres });
-            const newVenue = await addVenue(venueData);
-            setEventData({ ...eventData, venueId: newVenue.id });
+        try {
+            if (!eventData.isOnline && !eventData.venueId) {  // Если место не выбрано и не онлайн
+                setVenueData({ ...venueData, address: YMapAddres });
+                const newVenue = await addVenue(venueData);
+                if (newVenue && newVenue.id) {
+                    setEventData({ ...eventData, venueId: newVenue.id });
+                    return true;
+                } else {
+                    throw new Error('Не удалось создать место проведения');
+                }
+            }
+            return true;
+        } catch (error) {
+            const status = error.response?.status || 0;
+            if (status >= 400 && status < 500) {
+                toast.error(`Ошибка при создании места: ${error.response?.data?.message || 'Проверьте введенные данные'}`);
+            } else if (status >= 500) {
+                toast.error('Ошибка сервера при создании места. Попробуйте позже.');
+            } else {
+                toast.error('Не удалось создать место проведения');
+            }
+            return false;
         }
     };
 
     const handleAddEvent = async () => {
-        setEventData({ ...eventData, organizerId: user.id });
-        const { id } = await addEvent(eventData);
+        try {
+            setEventData({ ...eventData, organizerId: user.id });
+            const result = await addEvent(eventData);
 
-        // Добавляем выбранные категории к событию
-        // eventData.categories.forEach(async (categoryId) => {
-        //     await addCategoryToEvent(id, categoryId);
-        // });
+            if (result && result.id) {
+                toast.success('Мероприятие успешно создано!');
+                navigate('/my-events');
+                return true;
+            } else {
+                throw new Error('Не удалось создать мероприятие');
+            }
+        } catch (error) {
+            const status = error.response?.status || 0;
+            if (status >= 400 && status < 500) {
+                toast.error(`Ошибка при создании мероприятия: ${error.response?.data?.message || 'Проверьте введенные данные'}`);
+            } else if (status >= 500) {
+                toast.error('Ошибка сервера при создании мероприятия. Попробуйте позже.');
+            } else {
+                toast.error('Не удалось создать мероприятие');
+            }
+            return false;
+        }
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await handleAddVenue();
-        await handleAddEvent();
+        setLoading(true);
+        setError(null);
+
+        try {
+            const venueSuccess = await handleAddVenue();
+            if (venueSuccess) {
+                await handleAddEvent();
+            }
+        } catch (error) {
+            console.error('Ошибка при создании мероприятия:', error);
+            setError('Произошла ошибка при создании мероприятия');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -74,19 +125,25 @@ const AddEventForm = () => {
               className="add-event-form max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg space-y-4">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">Добавить новое событие</h2>
 
+            {error && (
+                <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                    {error}
+                </div>
+            )}
+
             {/* Поля для Event */}
             <div className="space-y-4">
                 <input
                     type="text"
                     value={eventData.name}
-                    onChange={(e) => setEventData({ ...eventData, name: e.target.value })}
+                    onChange={(e) => setEventData({...eventData, name: e.target.value})}
                     placeholder="Название мероприятия"
                     required
                     className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
                 />
                 <textarea
                     value={eventData.description}
-                    onChange={(e) => setEventData({ ...eventData, description: e.target.value })}
+                    onChange={(e) => setEventData({...eventData, description: e.target.value})}
                     placeholder="Описание мероприятия"
                     required
                     className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
@@ -94,7 +151,7 @@ const AddEventForm = () => {
                 <input
                     type="datetime-local"
                     value={eventData.date}
-                    onChange={(e) => setEventData({ ...eventData, date: e.target.value })}
+                    onChange={(e) => setEventData({...eventData, date: e.target.value})}
                     required
                     className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
                 />
@@ -104,7 +161,7 @@ const AddEventForm = () => {
                     <input
                         type="checkbox"
                         checked={eventData.isPaid}
-                        onChange={(e) => setEventData({ ...eventData, isPaid: e.target.checked })}
+                        onChange={(e) => setEventData({...eventData, isPaid: e.target.checked})}
                         className="text-blue-500 focus:ring-blue-300"
                     />
                 </div>
@@ -112,7 +169,7 @@ const AddEventForm = () => {
                     <input
                         type="number"
                         value={eventData.price}
-                        onChange={(e) => setEventData({ ...eventData, price: parseFloat(e.target.value) })}
+                        onChange={(e) => setEventData({...eventData, price: parseFloat(e.target.value)})}
                         placeholder="Стоимость участия"
                         required
                         className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
@@ -123,11 +180,28 @@ const AddEventForm = () => {
                     type="url"
                     required={false}
                     placeholder="Обложка мероприятия(URL)"
-                    onChange={(e) => setEventData({ ...eventData, image: e.target.value })}
+                    onChange={(e) => setEventData({...eventData, image: e.target.value})}
                     className="w-full px-4 py-2 border border-dashed rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
                 />
             </div>
-
+            <h3 className="text-xl font-semibold text-gray-700 mt-6">Категории</h3>
+            <select
+                multiple
+                value={eventData.categories}
+                onChange={(e) =>
+                    setEventData({
+                        ...eventData,
+                        categories: Array.from(e.target.selectedOptions, option => parseInt(option.value)),
+                    })
+                }
+                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none h-40"
+            >
+                {categories.map(category => (
+                    <option key={category.id} value={category.id}>
+                        {category.name}
+                    </option>
+                ))}
+            </select>
             {/* Поля для Venue */}
             <h3 className="text-xl font-semibold text-gray-700 mt-6">Место проведения</h3>
             <div className="space-y-4">
@@ -165,7 +239,7 @@ const AddEventForm = () => {
                         <input
                             type="text"
                             value={venueData.name}
-                            onChange={(e) => setVenueData({ ...venueData, name: e.target.value })}
+                            onChange={(e) => setVenueData({...venueData, name: e.target.value})}
                             placeholder="Название места"
                             required={!eventData.venueId}
                             className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
@@ -173,7 +247,7 @@ const AddEventForm = () => {
                         <input
                             type="number"
                             value={venueData.capacity}
-                            onChange={(e) => setVenueData({ ...venueData, capacity: parseInt(e.target.value, 10) })}
+                            onChange={(e) => setVenueData({...venueData, capacity: parseInt(e.target.value, 10)})}
                             placeholder="Вместимость"
                             required={!eventData.venueId}
                             className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
@@ -182,28 +256,33 @@ const AddEventForm = () => {
                             type="url"
                             required={false}
                             placeholder="Изображение места(URL)"
-                            onChange={(e) => setVenueData({ ...venueData, image: e.target.value })}
+                            onChange={(e) => setVenueData({...venueData, image: e.target.value})}
                             className="w-full px-4 py-2 border border-dashed rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
                         />
                         <div className="mb-4">
                             <label className="block text-lg font-medium">Местоположение</label>
-                            <YandexMap setAddressText={setYMapAddres} inForm={true} onCoordinatesChange={setYMapAddres} />
+                            <YandexMap setAddressText={setYMapAddres} inForm={true}
+                                       onCoordinatesChange={setYMapAddres}/>
                         </div>
                     </>
                 ) : null}
             </div>
 
             {/* Поля для выбора Организатора */}
-            <h3 className="text-xl font-semibold text-gray-700 mt-6">Спикер</h3>
+            <h3 className="text-xl font-semibold text-gray-700 mt-6">Спикеры</h3>
             <select
-                value={eventData.organizerId}
-                onChange={(e) => setEventData({ ...eventData, organizerId: parseInt(e.target.value) })}
-                required
-                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none"
+                multiple
+                value={eventData.speakers}
+                onChange={(e) =>
+                    setEventData({
+                        ...eventData,
+                        speakers: Array.from(e.target.selectedOptions, option => parseInt(option.value)),
+                    })
+                }
+                className="w-full px-4 py-2 border rounded-md focus:ring focus:ring-blue-300 focus:border-blue-500 outline-none h-40"
             >
-                <option value="">Выберите организатора</option>
                 {users
-                    .filter(user => user?.role?.name === 'organizer')
+                    .filter(user => user?.role?.name === 'speaker')
                     .map(user => (
                         <option key={user.id} value={user.id}>
                             {user.name}
@@ -211,11 +290,13 @@ const AddEventForm = () => {
                     ))}
             </select>
 
+
             <button
                 type="submit"
-                className="w-full py-3 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600 focus:outline-none"
+                disabled={loading}
+                className={`w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 ${loading ? 'opacity-70 cursor-not-allowed' : ''}`}
             >
-                Добавить событие
+                {loading ? 'Создание...' : 'Создать мероприятие'}
             </button>
         </form>
     );

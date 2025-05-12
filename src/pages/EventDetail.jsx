@@ -11,6 +11,8 @@ import useVenueStore from "../stores/VenueStore.js";
 import YandexMap from "../components/YandexMap.jsx"
 import axios from "axios";
 import useTransactionsStore from "../stores/TransactionStore.js";
+import Modal from "../components/Modal.jsx";
+import { motion } from "framer-motion";
 
 import { Link } from 'react-router-dom'; // Импортируем Link для навигации
 
@@ -24,6 +26,14 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
     const {subscriptions, fetchSubscriptions, addSubscription, deleteSubscription} = useSubscriptionStore();  // Для подписки на мероприятия
     const [eventLocation, setEventLocation] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Состояния для модальных окон
+    const [modalOpen, setModalOpen] = useState(false);
+    const [modalConfig, setModalConfig] = useState({
+        title: '',
+        message: '',
+        type: 'info'
+    });
 
     const getGeoPos = async () => {
         if (event) {
@@ -76,14 +86,20 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
         }
     }, [event]); // Добавляем event как зависимость
 
+    // Функция для показа модального окна
+    const showModal = (title, message, type = 'info') => {
+        setModalConfig({ title, message, type });
+        setModalOpen(true);
+    };
+
     const handleSubscribe = async () => {
         if (!user) {
-            alert("Пожалуйста, войдите в систему для подписки!");
+            showModal('Требуется авторизация', 'Пожалуйста, войдите в систему для подписки!', 'warning');
             return;
         }
 
         if (user.balance < event.price) {
-            alert("Недостаточно средств для подписки на это мероприятие.");
+            showModal('Недостаточно средств', 'У вас недостаточно средств для подписки на это мероприятие.', 'error');
             return;
         }
 
@@ -94,20 +110,31 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
             eventId: event.id,
         };
 
-        // Создаем транзакцию
-        await addTransaction(transactionData, user);
+        try {
+            // Создаем транзакцию
+            await addTransaction(transactionData, user);
 
-        // Обновляем баланс пользователя после успешной транзакци
-        const newBalance = user.balance - event.price;
-        console.log(newBalance)
-        await updateUserBalance(newBalance, user.id);
-        alert("Вы успешно подписались на мероприятие!");
+            // Обновляем баланс пользователя после успешной транзакции
+            const newBalance = user.balance - event.price;
+            console.log(newBalance)
+            await updateUserBalance(newBalance, user.id);
+            
+            // Показываем сообщение об успехе
+            showModal('Успешная подписка', 'Вы успешно подписались на мероприятие!', 'success');
+        } catch (error) {
+            showModal('Ошибка', 'Произошла ошибка при подписке на мероприятие.', 'error');
+        }
     };
 
-    const handleDeleteSubscription = (eventId) => {
+    const handleDeleteSubscription = async (eventId) => {
         const subscriptionToDelete = subscriptions.find(sub => sub.eventId === eventId && sub.userId === user?.id);
         if (subscriptionToDelete) {
-            deleteSubscription(subscriptionToDelete.id);
+            try {
+                await deleteSubscription(subscriptionToDelete.id);
+                showModal('Отписка', 'Вы успешно отписались от мероприятия.', 'info');
+            } catch (error) {
+                showModal('Ошибка', 'Произошла ошибка при отписке от мероприятия.', 'error');
+            }
         }
     };
 
@@ -128,6 +155,15 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
 
     return (
         <div className="event-detail-container mx-auto max-w-4xl p-6">
+            {/* Модальное окно */}
+            <Modal 
+                isOpen={modalOpen} 
+                onClose={() => setModalOpen(false)} 
+                title={modalConfig.title} 
+                message={modalConfig.message} 
+                type={modalConfig.type} 
+            />
+
             {/* Баннер с изображением мероприятия */}
             {event.image && (
                 <div className="event-banner mb-6 w-full h-[30em] relative rounded-lg overflow-hidden">
@@ -231,25 +267,40 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
             {/* Кнопки подписки/отписки */}
             {user && !isSubscribed && event.price > 0 && (
                 <div className="text-center">
-                    <button onClick={handleSubscribe} className="btn p-2 hover:text-white rounded btn-primary mb-4">
+                    <motion.button 
+                        onClick={handleSubscribe} 
+                        className="bg-blue-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-blue-600 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         Подписаться на мероприятие
-                    </button>
+                    </motion.button>
                 </div>
             )}
 
             {user && isSubscribed && event.price > 0 && (
                 <div className="text-center">
-                    <button onClick={() => handleDeleteSubscription(event.id)} className="btn btn-secondary mb-4">
+                    <motion.button 
+                        onClick={() => handleDeleteSubscription(event.id)} 
+                        className="bg-red-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-red-600 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         Отписаться от мероприятия
-                    </button>
+                    </motion.button>
                 </div>
             )}
 
             {!user && (
                 <div className="text-center mb-4">
-                    <button onClick={handleSubscribe} className="btn btn-primary mb-4">
+                    <motion.button 
+                        onClick={handleSubscribe} 
+                        className="bg-gray-500 text-white px-6 py-3 rounded-lg shadow-md hover:bg-gray-600 transition-colors"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
                         Войдите, чтобы подписаться
-                    </button>
+                    </motion.button>
                 </div>
             )}
         </div>

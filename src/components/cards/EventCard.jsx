@@ -1,12 +1,16 @@
 import {format} from 'date-fns';
 import {Link} from 'react-router-dom';
 import rehypeRaw from "rehype-raw";
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inProfileFeed, inSession}) => {
     // Состояние для модального окна согласия
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [isConfirmed, setIsConfirmed] = useState(false); // Состояние для подтверждения
+    const [isHovered, setIsHovered] = useState(false);
+    
+    // Состояние для уведомлений
+    const [notification, setNotification] = useState(null);
 
     // Функция для открытия модального окна
     const openModal = () => {
@@ -18,139 +22,441 @@ const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inPro
         setIsModalOpen(false);
     };
 
+    // Функция для отображения уведомления
+    const showNotification = (message, type = 'success') => {
+        setNotification({ message, type });
+        
+        // Автоматически скрываем уведомление через 3 секунды
+        setTimeout(() => {
+            setNotification(null);
+        }, 3000);
+    };
+
     // Функция для подтверждения подписки на платное мероприятие
     const handleSubscribe = () => {
-        onSubscribe(event.id); // Подписка на событие
-        closeModal(); // Закрыть модальное окно
+        try {
+            onSubscribe(event.id); // Подписка на событие
+            closeModal(); // Закрыть модальное окно
+            showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
+        } catch (error) {
+            showNotification(`Ошибка при подписке: ${error.message}`, 'error');
+        }
+    };
+    
+    // Функция для отписки от мероприятия
+    const handleUnsubscribe = () => {
+        try {
+            onUnsubscribe(event.id);
+            showNotification(`Вы отписались от мероприятия "${event.name}"`, 'info');
+        } catch (error) {
+            showNotification(`Ошибка при отписке: ${error.message}`, 'error');
+        }
+    };
+    
+    // Функция для подписки на бесплатное мероприятие
+    const handleFreeSubscribe = () => {
+        try {
+            onSubscribe(event.id);
+            showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
+        } catch (error) {
+            showNotification(`Ошибка при подписке: ${error.message}`, 'error');
+        }
     };
 
     // Проверка, является ли текущий пользователь спикером этого мероприятия
     const isSpeaker = event.speakers?.some(speaker => speaker.speaker.user.id === user.id) || inSession;
 
+    // Анимации для карточки
+    const cardVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: "easeInOut"
+            }
+        },
+        hover: {
+            y: -10,
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+            transition: {
+                type: "spring",
+                stiffness: 300,
+                damping: 20
+            }
+        }
+    };
+
+    // Анимации для модального окна
+    const modalVariants = {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: { 
+            opacity: 1, 
+            scale: 1,
+            transition: {
+                duration: 0.3,
+                ease: "easeOut"
+            }
+        },
+        exit: {
+            opacity: 0,
+            scale: 0.8,
+            transition: {
+                duration: 0.2,
+                ease: "easeIn"
+            }
+        }
+    };
+
+    // Анимации для кнопок
+    const buttonVariants = {
+        hover: { 
+            scale: 1.05,
+            transition: {
+                type: "spring",
+                stiffness: 400,
+                damping: 10
+            }
+        },
+        tap: { scale: 0.95 }
+    };
+
+    // Анимации для изображения
+    const imageVariants = {
+        hover: {
+            scale: 1.05,
+            transition: {
+                duration: 0.3,
+                ease: "easeInOut"
+            }
+        }
+    };
+
+    // Анимации для категорий
+    const categoryVariants = {
+        hidden: { opacity: 0, x: -10 },
+        visible: (i) => ({
+            opacity: 1,
+            x: 0,
+            transition: {
+                delay: i * 0.1,
+                duration: 0.3
+            }
+        })
+    };
+    
+    // Анимации для уведомлений
+    const notificationVariants = {
+        hidden: { opacity: 0, y: -50, x: "-50%" },
+        visible: { 
+            opacity: 1, 
+            y: 0,
+            x: "-50%",
+            transition: {
+                type: "spring",
+                stiffness: 500,
+                damping: 25
+            }
+        },
+        exit: { 
+            opacity: 0, 
+            y: -50,
+            x: "-50%",
+            transition: {
+                duration: 0.2
+            }
+        }
+    };
+
     return (
-        <div className="event-card items-center bg-white shadow-md rounded-lg p-4 border border-gray-200">
+        <motion.div 
+            className="event-card bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-2xl transition-shadow duration-300"
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
+            layoutId={`event-card-${event.id}`}
+        >
             {/* Баннер с изображением мероприятия */}
             {event.image && (
-                <div className="event-banner mb-4 w-[20em] relative rounded-lg overflow-hidden">
-                    {!inProfileFeed &&
-                        <div className="relative" style={{paddingTop: '75%'}}>
-                            <img
-                                src={event?.image}
-                                alt={event?.name}
-                                className="absolute top-0 left-0 w-full h-full object-cover rounded-lg"
-                            />
-                        </div>
-                    }
-                </div>
+                <motion.div 
+                    className="relative h-48 overflow-hidden"
+                    whileHover="hover"
+                >
+                    {!inProfileFeed && (
+                        <motion.img
+                            src={event?.image}
+                            alt={event?.name}
+                            className="w-full h-full object-cover"
+                            variants={imageVariants}
+                        />
+                    )}
+                    <motion.div 
+                        className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: isHovered ? 0.7 : 0.4 }}
+                    />
+                    <motion.div 
+                        className="absolute bottom-0 left-0 p-4 text-white"
+                        initial={{ y: 10, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        <h3 className="text-xl font-bold truncate">
+                            {event?.name}
+                        </h3>
+                        <p className="text-sm opacity-90">
+                            {format(new Date(event.date), 'dd.MM.yyyy HH:mm')}
+                        </p>
+                    </motion.div>
+                </motion.div>
             )}
 
-            <div className="justify-center">
-                {/* Название мероприятия */}
-                <h3 className="text-xl font-semibold text-blue-600">
-                    <Link to={`/event/${event.id}`} className="hover:text-blue-800">
-                        {event?.name}
-                    </Link>
-                </h3>
-                {/* Дата и место */}
-                <p className="text-gray-600">Дата: {format(new Date(event.date), 'dd.MM.yyyy HH:mm')}</p>
-                <p className="text-gray-600">Место: {event?.venue?.name ?? "Онлайн"}</p>
+            <div className="p-5">
+                {/* Название мероприятия (если нет изображения) */}
+                {!event.image && (
+                    <h3 className="text-xl font-bold text-blue-600 mb-2">
+                        <Link to={`/event/${event.id}`} className="hover:text-blue-800 transition-colors">
+                            {event?.name}
+                        </Link>
+                    </h3>
+                )}
 
-                {/* Дополнительная информация о мероприятии */}
-                <div className="mt-4">
-                    {event.isPaid && event.price && (
-                        <p className="text-gray-800">Стоимость: {event.price}₽</p>
-                    )}
-                    {!event.isPaid && <p className="text-gray-800">Бесплатное мероприятие</p>}
+                {/* Информация о месте */}
+                <div className="flex items-center mb-3 text-gray-600">
+                    <motion.svg 
+                        xmlns="http://www.w3.org/2000/svg" 
+                        className="h-5 w-5 mr-2 text-blue-500" 
+                        fill="none" 
+                        viewBox="0 0 24 24" 
+                        stroke="currentColor"
+                        initial={{ scale: 1 }}
+                        animate={{ scale: isHovered ? 1.2 : 1 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </motion.svg>
+                    <span>{event?.venue?.name ?? "Онлайн"}</span>
+                </div>
 
-                    {/* Организатор мероприятия */}
-                    <div className="mt-4">
-                        <h4 className="font-semibold text-gray-700">Организатор:</h4>
-                        <div className="flex items-center mt-2">
-                            <img
-                                src={event.organizer?.avatar}
-                                alt={event.organizer?.name}
-                                className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <div className="ml-3">
-                                <p className="text-gray-600">{event.organizer?.name}</p>
-                                <p className="text-gray-500">{event.organizer?.email}</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Категории мероприятия */}
-                    {event.categories?.length > 0 && (
-                        <div className="mt-4">
-                            <h4 className="font-semibold text-gray-700">Категории:</h4>
-                            <ul className="list-disc pl-5 text-gray-600">
-                                {event.categories.map((category, index) => (
-                                    <li key={index}>{category.category.name}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    )}
-
-                    {/* Спикеры */}
-                    {event.speakers?.length > 0 && (
-                        <div className="mt-4">
-                            <h4 className="font-semibold text-gray-700">Спикеры:</h4>
-                            <ul className="list-disc pl-5 text-gray-600">
-                                {event.speakers.map((speaker, index) => (
-                                    <li key={index}>{speaker.speaker.name}</li>
-                                ))}
-                            </ul>
-                        </div>
+                {/* Цена */}
+                <div className="mb-4">
+                    {event.isPaid && event.price ? (
+                        <motion.div 
+                            className="inline-block bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-semibold"
+                            whileHover={{ scale: 1.05 }}
+                        >
+                            Стоимость: {event.price}₽
+                        </motion.div>
+                    ) : (
+                        <motion.div 
+                            className="inline-block bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold"
+                            whileHover={{ scale: 1.05 }}
+                        >
+                            Бесплатное мероприятие
+                        </motion.div>
                     )}
                 </div>
 
-                {/* Кнопка подписки или отписки */}
-                {isSpeaker ? (
-                    <p className="p-2 text-xl text-center">Вы спикер данного события 🧐</p>
-                ) : (
-                    <>
-                        <div className="mt-4">
-                            {!isSubscribed ? (
-                                <button
-                                    className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                    onClick={event.isPaid ? openModal : () => onSubscribe(event.id)}>
-                                    Подписаться
-                                </button>
-                            ) : (
-                                <button
-                                    onClick={() => onUnsubscribe(event.id)}
-                                    className="py-2 px-4 bg-red-500 text-white rounded-md hover:bg-red-600">
-                                    Отписаться
-                                </button>
-                            )}
-                        </div>
+                {/* Организатор мероприятия */}
+                <motion.div 
+                    className="flex items-center mb-4 p-3 bg-gray-50 rounded-lg"
+                    whileHover={{ backgroundColor: "#f3f4f6" }}
+                >
+                    <motion.img
+                        src={event.organizer?.avatar}
+                        alt={event.organizer?.name}
+                        className="w-10 h-10 rounded-full object-cover border-2 border-blue-500"
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                    />
+                    <div className="ml-3">
+                        <p className="text-gray-800 font-medium">{event.organizer?.name}</p>
+                        <p className="text-gray-500 text-sm">{event.organizer?.email}</p>
+                    </div>
+                </motion.div>
 
-                        {/* Модальное окно согласия */}
-                        {isModalOpen && (
-                            <div
-                                className="fixed inset-0 bg-gray-600 bg-opacity-50 flex justify-center items-center z-50">
-                                <div className="bg-white p-6 rounded-lg shadow-lg w-1/3">
-                                    <h3 className="text-xl font-semibold mb-4">Подтвердите оплату</h3>
-                                    <p className="text-gray-600">Это платное мероприятие. Вы подтверждаете, что хотите
-                                        подписаться и оплатить участие?</p>
-                                    <div className="mt-4 flex justify-between">
-                                        <button
-                                            className="py-2 px-4 bg-gray-500 text-white rounded-md hover:bg-gray-600"
-                                            onClick={closeModal}>
-                                            Отменить
-                                        </button>
-                                        <button
-                                            className="py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                                            onClick={handleSubscribe}>
-                                            Подтвердить
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </>
+                {/* Категории мероприятия */}
+                {event.categories?.length > 0 && (
+                    <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Категории:</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {event.categories.map((category, index) => (
+                                <motion.span 
+                                    key={index} 
+                                    className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
+                                    custom={index}
+                                    variants={categoryVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    whileHover={{ scale: 1.1, backgroundColor: "#dbeafe" }}
+                                >
+                                    {category.category.name}
+                                </motion.span>
+                            ))}
+                        </div>
+                    </div>
                 )}
+
+                {/* Спикеры */}
+                {event.speakers?.length > 0 && (
+                    <div className="mb-4">
+                        <h4 className="text-sm font-semibold text-gray-700 mb-2">Спикеры:</h4>
+                        <div className="flex flex-wrap gap-2">
+                            {event.speakers.map((speaker, index) => (
+                                <motion.span 
+                                    key={index} 
+                                    className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
+                                    custom={index}
+                                    variants={categoryVariants}
+                                    initial="hidden"
+                                    animate="visible"
+                                    whileHover={{ scale: 1.1, backgroundColor: "#f3e8ff" }}
+                                >
+                                    {speaker.speaker.name}
+                                </motion.span>
+                            ))}
+                        </div>
+                    </div>
+                )}
+
+                {/* Кнопка подписки или отписки */}
+                <div className="mt-4 flex justify-between items-center">
+                    <Link 
+                        to={`/event/${event.id}`} 
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                        Подробнее →
+                    </Link>
+                    
+                    {isSpeaker ? (
+                        <motion.div 
+                            className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium"
+                            whileHover={{ scale: 1.05 }}
+                        >
+                            Вы спикер 🧐
+                        </motion.div>
+                    ) : (
+                        <>
+                            {!isSubscribed ? (
+                                <motion.button
+                                    className="py-2 px-4 bg-blue-500 text-white rounded-full font-medium text-sm shadow-md hover:bg-blue-600"
+                                    onClick={event.isPaid ? openModal : handleFreeSubscribe}
+                                    variants={buttonVariants}
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    Подписаться
+                                </motion.button>
+                            ) : (
+                                <motion.button
+                                    onClick={handleUnsubscribe}
+                                    className="py-2 px-4 bg-red-500 text-white rounded-full font-medium text-sm shadow-md hover:bg-red-600"
+                                    variants={buttonVariants}
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    Отписаться
+                                </motion.button>
+                            )}
+                        </>
+                    )}
+                </div>
             </div>
-        </div>
+
+            {/* Модальное окно согласия */}
+            <AnimatePresence>
+                {isModalOpen && (
+                    <motion.div
+                        className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={closeModal}
+                    >
+                        <motion.div 
+                            className="bg-white p-6 rounded-xl shadow-2xl w-full max-w-md m-4"
+                            variants={modalVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
+                            onClick={e => e.stopPropagation()}
+                        >
+                            <h3 className="text-xl font-bold mb-4 text-gray-800">Подтвердите оплату</h3>
+                            <p className="text-gray-600 mb-6">
+                                Вы собираетесь подписаться на платное мероприятие "{event.name}" стоимостью {event.price}₽. 
+                                Средства будут списаны с вашего баланса.
+                            </p>
+                            <div className="flex justify-end space-x-3">
+                                <motion.button
+                                    className="py-2 px-4 bg-gray-200 text-gray-800 rounded-lg font-medium"
+                                    onClick={closeModal}
+                                    variants={buttonVariants}
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    Отменить
+                                </motion.button>
+                                <motion.button
+                                    className="py-2 px-4 bg-blue-500 text-white rounded-lg font-medium shadow-md"
+                                    onClick={handleSubscribe}
+                                    variants={buttonVariants}
+                                    whileHover="hover"
+                                    whileTap="tap"
+                                >
+                                    Подтвердить
+                                </motion.button>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+            
+            {/* Уведомления */}
+            <AnimatePresence>
+                {notification && (
+                    <motion.div
+                        className={`fixed top-4 left-1/2 transform -translate-x-1/2 z-50 py-2 px-4 rounded-lg shadow-lg ${
+                            notification.type === 'success' ? 'bg-green-500 text-white' :
+                            notification.type === 'error' ? 'bg-red-500 text-white' :
+                            notification.type === 'info' ? 'bg-blue-500 text-white' :
+                            'bg-yellow-500 text-white'
+                        }`}
+                        variants={notificationVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="exit"
+                    >
+                        <div className="flex items-center">
+                            {notification.type === 'success' && (
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                            )}
+                            {notification.type === 'error' && (
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                                </svg>
+                            )}
+                            {notification.type === 'info' && (
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            )}
+                            {notification.type === 'warning' && (
+                                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                                </svg>
+                            )}
+                            <span>{notification.message}</span>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </motion.div>
     );
 };
 

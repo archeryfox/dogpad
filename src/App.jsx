@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import LoginForm from './components/forms/LoginForm.jsx';
 import RegisterForm from './components/forms/RegisterForm.jsx';
 import Profile from './pages/Profile.jsx';
@@ -20,11 +20,14 @@ import VenueEventChart from "./components/VenueEventChart.jsx";
 import FileExportImport from "./pages/FileExportImport.jsx";
 import {Charts} from "./pages/Charts.jsx";
 import MySessions from "./pages/MySessions.jsx";  // Новый компонент
+import AnimatedPage from "./components/AnimatedPage.jsx";
+import { AnimatePresence } from "framer-motion";
 
-const App = () => {
+// Компонент для анимированного содержимого
+const AnimatedRoutes = () => {
     const { user } = useAuthStore(); // Получаем пользователя из хранилища
-    useEffect(() => {}, []);
-
+    const location = useLocation();
+    
     // Проверка ролей пользователя
     const isAdmin = user?.role === 'admin';
     const isDbAdmin = user?.role === 'db_admin'; // Добавляем проверку для db_admin
@@ -32,71 +35,141 @@ const App = () => {
     const isSpeaker = user?.role === 'speaker';
 
     return (
+        <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+                {/* Главная страница с логином или лентой событий */}
+                <Route path="/" element={
+                    <AnimatedPage transitionType="fade">
+                        {!user ? (
+                            <div className="h-[30vh] flex items-center justify-center">
+                                <LoginForm />
+                            </div>
+                        ) : (
+                            <EventFeed />
+                        )}
+                    </AnimatedPage>
+                } />
+
+                {/* Маршрут для регистрации */}
+                <Route path="/register" element={
+                    <AnimatedPage transitionType="slideUp">
+                        <div className="h-[30vh] flex items-center justify-center">
+                            <RegisterForm />
+                        </div>
+                    </AnimatedPage>
+                } />
+
+                {/* Страница добавления нового события доступна только организаторам */}
+                <Route path="/event/add" element={
+                    <AnimatedPage transitionType="scale">
+                        {isOrganizer ? <AddEventForm /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Страница профиля доступна для всех авторизованных пользователей */}
+                <Route path="/profile" element={
+                    <AnimatedPage transitionType="slideRight">
+                        {user ? <Profile /> : <LoginForm />}
+                    </AnimatedPage>
+                } />
+
+                {/* Детали события */}
+                <Route path="/event/:id" element={
+                    <AnimatedPage transitionType="scale">
+                        <EventDetail />
+                    </AnimatedPage>
+                } />
+                <Route path="/events/:id" element={
+                    <AnimatedPage transitionType="scale">
+                        <EventDetail />
+                    </AnimatedPage>
+                } />
+
+                {/* Страницы для ролей */}
+                {/* Доступ к запросам на смену роли только для администраторов */}
+                <Route path="/role-change-requests" element={
+                    <AnimatedPage transitionType="rotate">
+                        {isAdmin || isDbAdmin ? <RoleChangeRequests /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Страница управления базой данных только для администраторов базы данных */}
+                <Route path="/db-management" element={
+                    <AnimatedPage transitionType="slideUp">
+                        {isDbAdmin ? <FileExportImport /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Мои события доступны организаторам */}
+                <Route path="/my-events" element={
+                    <AnimatedPage transitionType="slideRight">
+                        {isOrganizer ? <MyEvents /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Мои сессии доступны только спикерам */}
+                <Route path="/my-sessions" element={
+                    <AnimatedPage transitionType="slideRight">
+                        {isSpeaker ? <MySessions /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Страница подписок доступна всем пользователям */}
+                <Route path="/subscriptions" element={
+                    <AnimatedPage transitionType="slideUp">
+                        <SubscriptionFeed />
+                    </AnimatedPage>
+                } />
+
+                {/* Страница списка событий доступна всем */}
+                <Route path="/events" element={
+                    <AnimatedPage transitionType="slideRight">
+                        <EventList />
+                    </AnimatedPage>
+                } />
+
+                {/* Страница обновления события доступна только организатору */}
+                <Route path="/update-event/:eventId" element={
+                    <AnimatedPage transitionType="scale">
+                        {isOrganizer ? <UpdateEvent /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Страница с графиками доступна всем */}
+                <Route path="/charts" element={
+                    <AnimatedPage transitionType="rotate">
+                        <Charts />
+                    </AnimatedPage>
+                } />
+
+                {/* Страница резервного копирования и логов доступна только администратору или администратору базы данных */}
+                <Route path="/logs" element={
+                    <AnimatedPage transitionType="slideUp">
+                        {isAdmin || isDbAdmin ? <BackupsAndLogs /> : <NotFoundPage />}
+                    </AnimatedPage>
+                } />
+
+                {/* Страница 404 - для всех остальных маршрутов */}
+                <Route path="*" element={
+                    <AnimatedPage transitionType="fade">
+                        <NotFoundPage />
+                    </AnimatedPage>
+                } />
+            </Routes>
+        </AnimatePresence>
+    );
+};
+
+const App = () => {
+    useEffect(() => {}, []);
+
+    return (
         <Router>
             <div className="app-container">
                 {/* Отображаем Header на всех страницах, кроме страницы регистрации */}
                 {window.location.pathname !== '/register' && <Header />}
                 <div className="content-container p-6">
-                    <Routes>
-                        {/* Главная страница с логином или лентой событий */}
-                        <Route path="/" element={
-                            !user ? (
-                                <div className="h-[30vh] flex items-center justify-center">
-                                    <LoginForm />
-                                </div>
-                            ) : (
-                                <EventFeed />
-                            )
-                        } />
-
-                        {/* Маршрут для регистрации */}
-                        <Route path="/register" element={
-                            <div className="h-[30vh] flex items-center justify-center">
-                                <RegisterForm />
-                            </div>
-                        } />
-
-                        {/* Страница добавления нового события доступна только организаторам */}
-                        <Route path="/event/add" element={isOrganizer ? <AddEventForm /> : <NotFoundPage />} />
-
-                        {/* Страница профиля доступна для всех авторизованных пользователей */}
-                        <Route path="/profile" element={user ? <Profile /> : <LoginForm />} />
-
-                        {/* Детали события */}
-                        <Route path="/event/:id" element={<EventDetail />} />
-                        <Route path="/events/:id" element={<EventDetail />} />
-
-                        {/* Страницы для ролей */}
-                        {/* Доступ к запросам на смену роли только для администраторов */}
-                        <Route path="/role-change-requests" element={isAdmin || isDbAdmin ? <RoleChangeRequests /> : <NotFoundPage />} />
-
-                        {/* Страница управления базой данных только для администраторов базы данных */}
-                        <Route path="/db-management" element={isDbAdmin  ? <FileExportImport /> : <NotFoundPage />} />
-
-                        {/* Мои события доступны организаторам */}
-                        <Route path="/my-events" element={isOrganizer ? <MyEvents /> : <NotFoundPage />} />
-
-                        {/* Мои сессии доступны только спикерам */}
-                        <Route path="/my-sessions" element={isSpeaker ? <MySessions /> : <NotFoundPage />} />
-
-                        {/* Страница подписок доступна всем пользователям */}
-                        <Route path="/subscriptions" element={<SubscriptionFeed />} />
-
-                        {/* Страница списка событий доступна всем */}
-                        <Route path="/events" element={<EventList />} />
-
-                        {/* Страница обновления события доступна только организатору */}
-                        <Route path="/update-event/:eventId" element={isOrganizer ? <UpdateEvent /> : <NotFoundPage />} />
-
-                        {/* Страница с графиками доступна всем */}
-                        <Route path="/charts" element={<Charts />} />
-
-                        {/* Страница резервного копирования и логов доступна только администратору или администратору базы данных */}
-                        <Route path="/logs" element={isAdmin || isDbAdmin ? <BackupsAndLogs /> : <NotFoundPage />} />
-
-                        {/* Страница 404 - для всех остальных маршрутов */}
-                        <Route path="*" element={<NotFoundPage />} />
-                    </Routes>
+                    <AnimatedRoutes />
                 </div>
             </div>
         </Router>
