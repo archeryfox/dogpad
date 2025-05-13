@@ -8,25 +8,23 @@ const MyEvents = () => {
     const {events, fetchEvents, deleteEvent, loading, error} = useEventStore();
     const {user} = useAuthStore();
     const [myEvents, setMyEvents] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false); // Состояние для модального окна
-    const [eventToDelete, setEventToDelete] = useState(null); // Событие, которое нужно удалить
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [eventToDelete, setEventToDelete] = useState(null);
     const [isDeleting, setIsDeleting] = useState(false);
 
     useEffect(() => {
         if (user) {
-            fetchEvents(); // Получаем все мероприятия
+            fetchEvents();
         }
     }, [user]);
 
     useEffect(() => {
         if (events.length > 0 && user) {
-            // Фильтруем мероприятия, где организатор - текущий пользователь
             const filteredEvents = events.filter(event => event.organizerId === user.id);
             setMyEvents(filteredEvents);
         }
     }, [events, user]);
 
-    // Показываем уведомление при ошибке
     useEffect(() => {
         if (error) {
             toast.error(error);
@@ -34,24 +32,35 @@ const MyEvents = () => {
     }, [error]);
 
     const openModal = (eventId) => {
-        setEventToDelete(eventId); // Устанавливаем id мероприятия для удаления
-        setIsModalOpen(true); // Открываем модальное окно
+        setEventToDelete(eventId);
+        setIsModalOpen(true);
     };
 
     const closeModal = () => {
-        setIsModalOpen(false); // Закрываем модальное окно
-        setEventToDelete(null); // Очищаем выбранное мероприятие
+        setIsModalOpen(false);
+        setEventToDelete(null);
     };
 
     const handleDelete = async () => {
         if (eventToDelete) {
             setIsDeleting(true);
             try {
-                await deleteEvent(eventToDelete); // Удаляем выбранное мероприятие
+                await deleteEvent(eventToDelete);
                 toast.success('Мероприятие успешно удалено');
-                closeModal(); // Закрываем модальное окно
+                // Обновляем список мероприятий после успешного удаления
+                fetchEvents();
+                closeModal();
             } catch (error) {
-                // Обработка ошибок уже реализована в EventStore
+                console.error('Ошибка при удалении мероприятия:', error);
+                let errorMessage = 'Не удалось удалить мероприятие';
+                
+                if (error.response) {
+                    // Получаем сообщение об ошибке с сервера, если оно есть
+                    errorMessage = error.response.data?.error || errorMessage;
+                }
+                
+                toast.error(errorMessage);
+                // Ошибка уже обрабатывается в EventStore
             } finally {
                 setIsDeleting(false);
             }
@@ -84,26 +93,37 @@ const MyEvents = () => {
                 <div className="space-y-4">
                     {myEvents.map(event => (
                         <div key={event.id} className="event-card p-4 border border-gray-200 rounded-lg shadow-md">
+                            {event.image && (
+                                <img
+                                    src={event.image}
+                                    alt={event.name}
+                                    className="w-full h-48 object-cover mb-4 rounded"
+                                />
+                            )}
                             <h3 className="text-xl font-semibold text-gray-800">{event.name}</h3>
-                            <p className="text-gray-600">{event.description.substr(0,10)}</p>
+                            <p className="text-gray-600">{event.description.substr(0, 100)}...</p>
                             <p className="text-gray-500">Дата: {new Date(event.date).toLocaleString()}</p>
-                            <div className="flex justify-between items-center mt-4">
+                            <div className="flex justify-between items-center mt-4 flex-wrap gap-2">
                                 <Link
                                     to={`/event/${event.id}`}
                                     className="text-blue-500 hover:text-blue-700 font-medium"
                                 >
-                                   🔎 Подробнее
+                                    🔎 Подробнее
                                 </Link>
-                                    <Link to={`/update-event/${event.id}`}
-                                          className="text-blue-500 hover:text-blue-700 font-medium">
-                                                🖊️ Редактировать
-                                    </Link>
-                                <span className="text-gray-500">Статус: {event.isPaid ? 'Платное 💰' : 'Бесплатное 🆓'}</span>
+                                <Link
+                                    to={`/update-event/${event.id}`}
+                                    className="text-blue-500 hover:text-blue-700 font-medium"
+                                >
+                                    🖊️ Редактировать
+                                </Link>
+                                <span className="text-gray-500">
+                                    Статус: {event.isPaid ? 'Платное 💰' : 'Бесплатное 🆓'}
+                                </span>
                                 <button
                                     onClick={() => openModal(event.id)}
                                     className="text-red-500 hover:text-red-700 font-medium"
                                 >
-                                   🗑️ Удалить
+                                    🗑️ Удалить
                                 </button>
                             </div>
                         </div>
@@ -111,7 +131,6 @@ const MyEvents = () => {
                 </div>
             )}
 
-            {/* Модальное окно подтверждения удаления */}
             {isModalOpen && (
                 <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
                     <div className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full">

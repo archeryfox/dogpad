@@ -117,6 +117,7 @@ const useEventStore = create((set) => ({
         set({ loading: true, error: null });
         try {
             const response = await api.delete(`${routes.events}/${id}`);
+            // Проверяем статус ответа (204 - успешное удаление без контента)
             if (response.status >= 200 && response.status < 300) {
                 set((state) => ({
                     events: state.events.filter((event) => event.id !== id),
@@ -124,6 +125,8 @@ const useEventStore = create((set) => ({
                     error: null
                 }));
                 return true;
+            } else {
+                throw new Error(`Неожиданный статус ответа: ${response.status}`);
             }
         } catch (error) {
             console.error("Error deleting event:", error);

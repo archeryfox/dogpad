@@ -3,14 +3,8 @@ import {Link} from 'react-router-dom';
 import rehypeRaw from "rehype-raw";
 import {useState, useEffect} from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import useSubscriptionStore from '../../stores/SubscriptionStore';
-import useAuthStore from '../../stores/AuthStore';
 
 const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inProfileFeed, inSession}) => {
-    // Получаем методы из сторов
-    const { addPaidSubscription } = useSubscriptionStore();
-    const { updateUserBalance } = useAuthStore();
-    
     // Состояние для модального окна согласия
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [isHovered, setIsHovered] = useState(false);
@@ -39,59 +33,33 @@ const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inPro
     };
 
     // Функция для подтверждения подписки на платное мероприятие
-    const handleSubscribe = async () => {
+    const handleSubscribe = () => {
         try {
-            console.log("Вызван handleSubscribe для события:", event.id, "пользователь:", user?.id, "цена:", event.price);
-            
-            if (!user) {
-                showNotification("Пожалуйста, войдите в систему для подписки!", "warning");
-                closeModal();
-                return;
-            }
-            
-            if (event.isPaid && event.price > 0) {
-                // Для платных мероприятий используем специальный метод
-                console.log("Вызываем addPaidSubscription с параметрами:", event.id, user.id, event.price);
-                const success = await addPaidSubscription(event.id, user.id, event.price);
-                console.log("Результат addPaidSubscription:", success);
-                
-                if (success) {
-                    closeModal(); // Закрыть модальное окно
-                    showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
-                    // Обновляем состояние подписки в родительском компоненте
-                    if (onSubscribe) onSubscribe(event.id);
-                }
-            } else {
-                // Для бесплатных мероприятий используем обычный метод
-                if (onSubscribe) onSubscribe(event.id); // Подписка на событие
-                closeModal(); // Закрыть модальное окно
-                showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
-            }
+            onSubscribe(event.id); // Подписка на событие
+            closeModal(); // Закрыть модальное окно
+            showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
         } catch (error) {
-            console.error("Ошибка при подписке:", error);
-            showNotification(`Ошибка при подписке: ${error.message || 'Неизвестная ошибка'}`, 'error');
+            showNotification(`Ошибка при подписке: ${error.message}`, 'error');
         }
     };
 
     // Функция для отписки от мероприятия
     const handleUnsubscribe = () => {
         try {
-            if (onUnsubscribe) onUnsubscribe(event.id);
+            onUnsubscribe(event.id);
             showNotification(`Вы отписались от мероприятия "${event.name}"`, 'info');
         } catch (error) {
-            console.error("Ошибка при отписке:", error);
-            showNotification(`Ошибка при отписке: ${error.message || 'Неизвестная ошибка'}`, 'error');
+            showNotification(`Ошибка при отписке: ${error.message}`, 'error');
         }
     };
 
     // Функция для подписки на бесплатное мероприятие
     const handleFreeSubscribe = () => {
         try {
-            if (onSubscribe) onSubscribe(event.id);
+            onSubscribe(event.id);
             showNotification(`Вы успешно подписались на мероприятие "${event.name}"`, 'success');
         } catch (error) {
-            console.error("Ошибка при подписке:", error);
-            showNotification(`Ошибка при подписке: ${error.message || 'Неизвестная ошибка'}`, 'error');
+            showNotification(`Ошибка при подписке: ${error.message}`, 'error');
         }
     };
 
@@ -158,6 +126,7 @@ const EventCard = ({event, user, isSubscribed, onSubscribe, onUnsubscribe, inPro
     const imageVariants = {
         hover: {
             scale: 1.05,
+            borderRadius: "0.3rem",
             transition: {
                 duration: 0.3,
                 ease: "easeInOut"

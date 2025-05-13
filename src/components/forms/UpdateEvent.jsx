@@ -7,19 +7,19 @@ import useSpeakerStore from '../../stores/SpeakerStore.js';
 import useEventCategoryStore from '../../stores/EventCategory.js';
 import useAuthStore from '../../stores/AuthStore.js';
 import useEventSpeakerStore from "../../stores/EventSpeaker.js";
+// ...импорты без изменений
 
 const EventUpdate = () => {
-    const {eventId} = useParams(); // Получаем ID события из URL
+    const { eventId } = useParams();
     const navigate = useNavigate();
 
-    // Хуки для получения данных
-    const {events, fetchEvents, updateEvent} = useEventStore();
-    const {venues, fetchVenues} = useVenueStore();
-    const {categories, fetchCategories} = useCategoryStore();
-    const {speakers, fetchSpeakers} = useSpeakerStore();
-    const {user} = useAuthStore();
-    const {addEventCategory} = useEventCategoryStore();
-    const {addEventSpeaker, deleteEventSpeaker} = useEventSpeakerStore();
+    const { events, fetchEvents, updateEvent } = useEventStore();
+    const { venues, fetchVenues } = useVenueStore();
+    const { categories, fetchCategories } = useCategoryStore();
+    const { speakers, fetchSpeakers } = useSpeakerStore();
+    const { user } = useAuthStore();
+    const { addEventCategory } = useEventCategoryStore();
+    const { addEventSpeaker, deleteEventSpeaker } = useEventSpeakerStore();
 
     const [eventData, setEventData] = useState({
         name: '',
@@ -37,7 +37,6 @@ const EventUpdate = () => {
     const [isOnline, setIsOnline] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Загружаем данные
     useEffect(() => {
         fetchEvents();
         fetchVenues();
@@ -60,7 +59,7 @@ const EventUpdate = () => {
                 categories: event.categories?.map((cat) => cat.category.id) || [],
                 speakers: event.speakers?.map((speaker) => speaker.id) || [],
             });
-            setIsOnline(!event.venueId); // Если нет venueId, то онлайн
+            setIsOnline(!event.venueId);
         } else {
             console.log("Event not found, redirecting to /404");
             navigate('/404');
@@ -68,7 +67,7 @@ const EventUpdate = () => {
     }, [events, eventId]);
 
     const handleInputChange = (e) => {
-        const {name, value, type, checked} = e.target;
+        const { name, value, type, checked } = e.target;
         setEventData({
             ...eventData,
             [name]: type === 'checkbox' ? checked : value,
@@ -76,7 +75,7 @@ const EventUpdate = () => {
     };
 
     const handleVenueChange = (e) => {
-        const {value} = e.target;
+        const { value } = e.target;
         setEventData({
             ...eventData,
             venueId: value,
@@ -84,7 +83,7 @@ const EventUpdate = () => {
     };
 
     const handleCategoryChange = (e) => {
-        const {value, checked} = e.target;
+        const { value, checked } = e.target;
         const categoryId = parseInt(value);
 
         setEventData((prevState) => ({
@@ -96,10 +95,8 @@ const EventUpdate = () => {
     };
 
     const handleSpeakerChange = async (e) => {
-        const {value, checked} = e.target;
+        const { value, checked } = e.target;
         const speakerId = parseInt(value);
-
-
 
         setEventData((prevState) => ({
             ...prevState,
@@ -120,12 +117,8 @@ const EventUpdate = () => {
 
         await updateEvent(eventId, updatedEventData);
 
-       /* for (const categoryId of eventData.categories) {
-            await addEventCategory(eventId, categoryId);
-        }*/
-
         setLoading(false);
-        navigate(`/events/${eventId}`);
+        navigate(`/my-events`); // ✅ редирект на "мои мероприятия"
     };
 
     if (events.length === 0) {
@@ -136,7 +129,6 @@ const EventUpdate = () => {
         <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 bg-white shadow-md rounded-lg space-y-4">
             <h2 className="text-2xl font-semibold text-gray-700 mb-4">Обновить мероприятие</h2>
 
-            {/* Поля для Event */}
             <input
                 type="text"
                 name="name"
@@ -146,6 +138,7 @@ const EventUpdate = () => {
                 required
                 className="w-full px-4 py-2 border rounded-md"
             />
+
             <textarea
                 name="description"
                 value={eventData.description}
@@ -154,6 +147,7 @@ const EventUpdate = () => {
                 required
                 className="w-full px-4 py-2 border rounded-md"
             />
+
             <input
                 type="datetime-local"
                 name="date"
@@ -162,6 +156,7 @@ const EventUpdate = () => {
                 required
                 className="w-full px-4 py-2 border rounded-md"
             />
+
             <div className="flex items-center">
                 <input
                     type="checkbox"
@@ -172,6 +167,7 @@ const EventUpdate = () => {
                 />
                 <label className="text-sm">Платное мероприятие</label>
             </div>
+
             {eventData.isPaid && (
                 <input
                     type="number"
@@ -183,6 +179,7 @@ const EventUpdate = () => {
                     className="w-full px-4 py-2 border rounded-md"
                 />
             )}
+
             <input
                 type="url"
                 name="image"
@@ -192,7 +189,18 @@ const EventUpdate = () => {
                 className="w-full px-4 py-2 border rounded-md"
             />
 
-            {/* Поля для Venue */}
+            {/* 🔄 Показ изображения, если URL указан */}
+            {eventData.image && (
+                <div className="w-full">
+                    <img
+                        src={eventData.image}
+                        alt="Обложка мероприятия"
+                        className="mt-2 rounded-md object-cover max-h-60 w-full border"
+                    />
+                </div>
+            )}
+
+            {/* Место проведения */}
             <h3 className="text-xl font-semibold text-gray-700">Место проведения</h3>
             <div className="flex items-center">
                 <input
@@ -219,11 +227,11 @@ const EventUpdate = () => {
                 </select>
             )}
 
-            {/* Поля для категорий */}
+            {/* Категории */}
             <h3 className="text-xl font-semibold text-gray-700">Категории мероприятия</h3>
             <div className="flex flex-wrap">
                 {categories.map((category) => (
-                    <div key={category.id} className="flex items-center mr-4">
+                    <div key={category.id} className="flex items-center mr-4 mb-2">
                         <input
                             type="checkbox"
                             value={category.id}
@@ -236,11 +244,11 @@ const EventUpdate = () => {
                 ))}
             </div>
 
-            {/* Поля для спикеров */}
+            {/* Спикеры */}
             <h3 className="text-xl font-semibold text-gray-700">Спикеры</h3>
             <div className="flex flex-wrap">
                 {speakers.map((speaker) => (
-                    <div key={speaker.id} className="flex items-center mr-4">
+                    <div key={speaker.id} className="flex items-center mr-4 mb-2">
                         <input
                             type="checkbox"
                             value={speaker.id}
@@ -265,4 +273,3 @@ const EventUpdate = () => {
 };
 
 export default EventUpdate;
-

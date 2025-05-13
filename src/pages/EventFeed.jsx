@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const EventFeed = () => {
     const { events, fetchEvents } = useEventStore();
     const { user } = useAuthStore();
-    const { subscriptions, fetchSubscriptions, addSubscription, deleteSubscription } = useSubscriptionStore();
+    const { subscriptions, fetchSubscriptions, addSubscription, addPaidSubscription, deleteSubscription } = useSubscriptionStore();
     
     // Состояния
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -121,18 +121,37 @@ const EventFeed = () => {
     };
 
     // Функция для подписки на мероприятие
-    const handleSubscribe = (eventId) => {
+    const handleSubscribe = async (eventId) => {
         if (!user) {
             showNotification("Пожалуйста, войдите в систему для подписки!", "warning");
             return;
         }
         
+        // Находим мероприятие по ID
+        const event = events.find(e => e.id === eventId);
+        if (!event) {
+            showNotification("Мероприятие не найдено", "error");
+            return;
+        }
+        
         try {
-            addSubscription({ eventId: eventId, userId: user.id });
-            const eventName = events.find(e => e.id === eventId)?.name || "мероприятие";
-            showNotification(`Вы успешно подписались на "${eventName}"`, "success");
+            console.log("Подписка на мероприятие:", event);
+            
+            // Если мероприятие платное, используем метод для платных подписок
+            if (event.isPaid && event.price > 0) {
+                console.log("Платное мероприятие, цена:", event.price);
+                const success = await addPaidSubscription(eventId, user.id, event.price);
+                if (success) {
+                    showNotification(`Вы успешно подписались на "${event.name}"`, "success");
+                }
+            } else {
+                // Для бесплатных мероприятий используем обычный метод подписки
+                addSubscription({ eventId: eventId, userId: user.id });
+                showNotification(`Вы успешно подписались на "${event.name}"`, "success");
+            }
         } catch (error) {
-            showNotification(`Ошибка при подписке: ${error.message}`, "error");
+            console.error("Ошибка при подписке:", error);
+            showNotification(`Ошибка при подписке: ${error.message || 'Неизвестная ошибка'}`, "error");
         }
     };
 

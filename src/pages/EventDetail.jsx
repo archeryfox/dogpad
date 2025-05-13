@@ -21,7 +21,7 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
     const {events, fetchEvents} = useEventStore();
     const [event, setEvent] = useState(null);
     const {venues, fetchVenues} = useVenueStore()
-    const { addTransaction } = useTransactionsStore(); // Для добавления транзакций
+    const { addTransaction, createPayment } = useTransactionsStore(); // Для добавления транзакций и получения метода createPayment
     const {user, updateUserBalance } = useAuthStore();  // Доступ к текущему пользователю
     const {subscriptions, fetchSubscriptions, addSubscription, deleteSubscription} = useSubscriptionStore();  // Для подписки на мероприятия
     const [eventLocation, setEventLocation] = useState([]);
@@ -98,12 +98,7 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
             return;
         }
 
-        if (user.balance < event.price) {
-            showModal('Недостаточно средств', 'У вас недостаточно средств для подписки на это мероприятие.', 'error');
-            return;
-        }
-
-        // Добавляем транзакцию для подписки
+        // Создаем данные для транзакции
         const transactionData = {
             amount: event.price, // Сумма, указанная в мероприятии
             userId: user.id,
@@ -111,18 +106,31 @@ const EventDetail = ({onSubscribe, onUnsubscribe}) => {
         };
 
         try {
-            // Создаем транзакцию
-            await addTransaction(transactionData, user);
-
-            // Обновляем баланс пользователя после успешной транзакции
-            const newBalance = user.balance - event.price;
-            console.log(newBalance)
-            await updateUserBalance(newBalance, user.id);
+            // Используем новый метод для создания платежа, который обрабатывает все операции на бэкенде
+            const result = await createPayment(transactionData);
             
-            // Показываем сообщение об успехе
-            showModal('Успешная подписка', 'Вы успешно подписались на мероприятие!', 'success');
+            if (result) {
+                console.log("Результат создания платежа:", result);
+                
+                // Проверяем структуру ответа и обновляем баланс пользователя
+                if (result.user && result.user.balance) {
+                    // Если в ответе есть информация о пользователе с балансом
+                    await updateUserBalance(result.user.balance, user.id);
+                } else {
+                    // Если в ответе нет информации о пользователе, обновляем баланс вручную
+                    const newBalance = user.balance - event.price;
+                    await updateUserBalance(newBalance, user.id);
+                }
+                
+                // Обновляем список подписок
+                await fetchSubscriptions();
+                
+                // Показываем сообщение об успехе
+                showModal('Успешная подписка', 'Вы успешно подписались на мероприятие!', 'success');
+            }
         } catch (error) {
-            showModal('Ошибка', 'Произошла ошибка при подписке на мероприятие.', 'error');
+            // Ошибка уже обрабатывается в TransactionStore, здесь просто перехватываем исключение
+            console.error("Ошибка при подписке:", error);
         }
     };
 

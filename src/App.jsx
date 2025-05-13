@@ -22,6 +22,7 @@ import {Charts} from "./pages/Charts.jsx";
 import MySessions from "./pages/MySessions.jsx";  // Новый компонент
 import AnimatedPage from "./components/AnimatedPage.jsx";
 import { AnimatePresence } from "framer-motion";
+import Notification from "./components/ui/Notification.jsx";
 
 // Компонент для анимированного содержимого
 const AnimatedRoutes = () => {
@@ -168,6 +169,7 @@ const App = () => {
             <div className="app-container">
                 {/* Отображаем Header на всех страницах, кроме страницы регистрации */}
                 {window.location.pathname !== '/register' && <Header />}
+                <Notification />
                 <div className="content-container p-6">
                     <AnimatedRoutes />
                 </div>

@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { api, routes } from './axios'; // Путь к вашему axios.js
+import useNotificationStore from './NotificationStore';
+import useUserStore from './UserStore'; // Импортируем UserStore
 
 const roles = ['user', 'admin', 'speaker', 'organizer', 'db_admin'];
 
@@ -84,9 +86,10 @@ const useAuthStore = create((set) => ({
                 headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
             });
             set({ error: null, loading: false });
-            alert('Запрос на смену роли отправлен администратору.');
+            useNotificationStore.getState().showNotification('Запрос на смену роли отправлен администратору.', 'success');
         } catch (error) {
             set({ error: 'Ошибка при отправке запроса на смену роли', loading: false });
+            useNotificationStore.getState().showNotification('Ошибка при отправке запроса на смену роли', 'error');
         }
     },
     // Функция для обновления баланса пользователя
@@ -98,8 +101,9 @@ const useAuthStore = create((set) => ({
                 return { user: updatedUser };
             });
 
-            // Отправляем запрос на сервер для обновления данных о балансе
-            await api.put(`${routes.users}/${id}`, { balance: newBalance-0 });
+            // Используем метод updateUser из UserStore для обновления баланса на сервере
+            const userStore = useUserStore.getState();
+            await userStore.updateUser(id, { balance: newBalance-0 });
         } catch (error) {
             console.error("Ошибка при обновлении баланса пользователя:", error);
         }
